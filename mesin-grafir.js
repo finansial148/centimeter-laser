@@ -1,5 +1,4 @@
-
- let cropperFoto;
+let cropperFoto;
 let gambarMatengObor = new Image(); // Menyimpan data gambar hasil crop asli
 let modePresetGambar = "kayu"; // Nilai bawaan murni: "kayu", "akrilik", atau "siluet"
 
@@ -21,95 +20,94 @@ const valContrast = document.getElementById('val-contrast');
 const valDensity = document.getElementById('val-density');
 
 // --- 1. PROSES BUKA FILE & NYALAKAN CROPPER ---
-// --- 1. PROSES BUKA FILE & NYALAKAN CROPPER (VERSI BERSIH ANTI-ERROR) ---
-fileInput.addEventListener('change', function(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-  
-  // 🚀 RESET MEMORI CORETAN DISINI BIAR BERSIH SEPERTI BARU
-    resetMemoriPenghapus();
+if (fileInput) {
+    fileInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+      
+        // 🚀 RESET MEMORI CORETAN DISINI BIAR BERSIH SEPERTI BARU
+        resetMemoriPenghapus();
 
-    const reader = new FileReader();
-    reader.onload = function(event) {
-        // Sembunyikan teks bantu & hasil lama
-        teksBantu.style.display = 'none';
-        canvasBitmap.style.display = 'none';
-        btnKirim.style.display = 'none';
-        
-        // Tampilkan gambar target buat di-crop
-        imgTargetCrop.src = event.target.result;
-        imgTargetCrop.style.display = 'block';
-        
-        // SAKTI: Ini yang bener, Bang, gak pake double .style lagi!
-        btnPotong.style.display = 'block'; 
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            // Sembunyikan teks bantu & hasil lama
+            if (teksBantu) teksBantu.style.display = 'none';
+            if (canvasBitmap) canvasBitmap.style.display = 'none';
+            if (btnKirim) btnKirim.style.display = 'none';
+            
+            // Tampilkan gambar target buat di-crop
+            if (imgTargetCrop) {
+                imgTargetCrop.src = event.target.result;
+                imgTargetCrop.style.display = 'block';
+            }
+            
+            if (btnPotong) btnPotong.style.display = 'block'; 
 
-        // Nyalakan mesin Cropper CropperJS
-        if (cropperFoto) cropperFoto.destroy();
-        cropperFoto = new cropperFoto(imgTargetCrop, {
-            viewMode: 1,
-            aspectRatio: NaN, // Bebas sesuka hati ngatur kotak potongnya
-            background: true
-        });
-    };
-    reader.readAsDataURL(file);
-});
+            // Nyalakan mesin Cropper CropperJS
+            if (cropperFoto) cropperFoto.destroy();
+            cropperFoto = new Cropper(imgTargetCrop, {
+                viewMode: 1,
+                aspectRatio: NaN, // Bebas sesuka hati ngatur kotak potongnya
+                background: true
+            });
+        };
+        reader.readAsDataURL(file);
+    });
+}
 
 // --- 2. PROSES EKSEKUSI POTONG FOTO ---
 function eksekusiPotongFoto() {
     if (!cropperFoto) return;
 
-    // Ambil gambar hasil crop
-    // KODE BARU (Paksa naikkan resolusi gambar hasil crop biar titik dither-nya super mikro!)
-const canvasHasilCrop = cropperFoto.getCroppedCanvas({
-    width: 1200, // SAKTI: Paksa lebar gambar jadi 1200 piksel (Atau 1500 biar lebih halus lagi)
-    imageSmoothingEnabled: true,
-    imageSmoothingQuality: 'high'
-});
-    
+    // Ambil gambar hasil crop & paksa resolusi tinggi
+    const canvasHasilCrop = cropperFoto.getCroppedCanvas({
+        width: 1200, // SAKTI: Paksa lebar gambar jadi 1200 piksel biar titik dither super mikro
+        imageSmoothingEnabled: true,
+        imageSmoothingQuality: 'high'
+    });
+        
     gambarMatengObor.src = canvasHasilCrop.toDataURL();
     gambarMatengObor.onload = function() {
         // Matikan mesin cropper & sembunyikan gambarnya
         cropperFoto.destroy();
         cropperFoto = null;
-        imgTargetCrop.style.display = 'none';
+        if (imgTargetCrop) imgTargetCrop.style.display = 'none';
         
-        // Sembunyikan tombol potong, munculkan canvas bitmap & tombol kirim
-        btnPotong.style.display = 'none';
-        canvasBitmap.style.display = 'block';
-        btnKirim.style.display = 'block';
-      
-      //sembunyilan button gambar
-      btnGbr.style.display = 'none';
+        // Atur visibilitas tombol & canvas
+        if (btnPotong) btnPotong.style.display = 'none';
+        if (canvasBitmap) {
+            canvasBitmap.style.display = 'block';
+            canvasBitmap.width = gambarMatengObor.width;
+            canvasBitmap.height = gambarMatengObor.height;
+        }
+        if (btnKirim) btnKirim.style.display = 'block';
+          
+        const btnGbr = document.getElementById('btnGbr');
+        if (btnGbr) btnGbr.style.display = 'none';
 
-        // Setel ukuran canvas bitmap sesuai hasil potongan gambar
-        canvasBitmap.width = gambarMatengObor.width;
-        canvasBitmap.height = gambarMatengObor.height;
-
-        // Gaskeun jalankan kalkulasi dither titik RDWorks!
+        // Jalankan kalkulasi dither titik RDWorks!
         jalankanOlahBitmap();
-      
-      
     };
 }
 
 // --- 3. PROSES SLIDER GERAK (BRIGHTNESS, CONTRAST, DENSITY) ---
 function updateNilaiDanProses() {
-    valBright.innerText = slideBright.value;
-    valContrast.innerText = slideContrast.value;
-    valDensity.innerText = slideDensity.value;
-    
+    if (valBright) valBright.innerText = slideBright.value;
+    if (valContrast) valContrast.innerText = slideContrast.value;
+    if (valDensity) valDensity.innerText = slideDensity.value;
+        
     if (gambarMatengObor.src) {
         jalankanOlahBitmap();
     }
 }
 
-slideBright.addEventListener('input', updateNilaiDanProses);
-slideContrast.addEventListener('input', updateNilaiDanProses);
-slideDensity.addEventListener('input', updateNilaiDanProses);
+if (slideBright) slideBright.addEventListener('input', updateNilaiDanProses);
+if (slideContrast) slideContrast.addEventListener('input', updateNilaiDanProses);
+if (slideDensity) slideDensity.addEventListener('input', updateNilaiDanProses);
 
 // --- 4. ENGINE SAKTI: FLOYD-STEINBERG DITHERING (BITMAP HANDLE) ---
 function jalankanOlahBitmap() {
-    if (!gambarMatengObor.src) return;
+    if (!gambarMatengObor.src || !canvasBitmap) return;
 
     ctxBitmap.drawImage(gambarMatengObor, 0, 0);
     gambarUlangSemuaCoretan();
@@ -118,46 +116,40 @@ function jalankanOlahBitmap() {
     const d = dataPiksel.data;
     const w = dataPiksel.width;
 
-    const bVal = parseInt(slideBright.value);
-    const cVal = parseInt(slideContrast.value);
+    const bVal = parseInt(slideBright.value || 0);
+    const cVal = parseInt(slideContrast.value || 0);
     const factor = (259 * (cVal + 255)) / (255 * (259 - cVal));
-    const density = parseInt(slideDensity.value); 
+    const density = parseInt(slideDensity.value || 1); 
 
-    // ======================================================================
-    // TAHAP A (VERSI R&D): Atur Kecerahan, Kontras, Grayscale, & Preset Media
-    // ======================================================================
+    // TAHAP A: Atur Kecerahan, Kontras, Grayscale, & Preset Media
     for (let i = 0; i < d.length; i += 4) {
         let r = d[i];
         let g = d[i+1];
         let b = d[i+2];
 
-        // 1. Efek Brightness
+        // 1. Brightness
         r += bVal; g += bVal; b += bVal;
 
-        // 2. Efek Contrast
+        // 2. Contrast
         r = factor * (r - 128) + 128;
         g = factor * (g - 128) + 128;
         b = factor * (b - 128) + 128;
 
-        // 3. Ubah ke Grayscale murni rumus standar YUV ruko
+        // 3. Grayscale murni
         let gray = 0.299 * r + 0.587 * g + 0.114 * b;
         gray = Math.min(255, Math.max(0, gray));
 
-        // 🚀 FORMULA SAKTI R&D LAB (IDE 2) 🚀
+        // FORMULA SAKTI PRESET MODE
         if (modePresetGambar === "akrilik") {
-            // Mode Invert: Balik warna murni biar di akrilik hitam mukanya gak kayak hantu
-            gray = 255 - gray; 
+            gray = 255 - gray; // Mode Invert warna
         } else if (modePresetGambar === "siluet") {
-            // Mode Kontras Tinggi: Paksa langsung jadi Hitam (0) atau Putih (255) sebelum dither
-            gray = gray < 128 ? 0 : 255;
+            gray = gray < 128 ? 0 : 255; // Mode Kontras Tinggi murni hitam putih
         }
-        // Jika modePresetGambar === "kayu", dia dilewatkan normal tanpa manipulasi tambahan
 
         d[i] = gray; d[i+1] = gray; d[i+2] = gray;
     }
 
-    // Tahap B: Eksekusi Algoritma Penyebaran Error Titik (Floyd-Steinberg Dithering)
-    // (Biarkan kode Tahap B milik Abang ke bawah tetap utuh sampai akhir fungsi!)
+    // Tahap B: Algoritma Floyd-Steinberg Dithering
     for (let y = 0; y < dataPiksel.height; y += density) {
         for (let x = 0; x < dataPiksel.width; x += density) {
             let idx = (y * w + x) * 4;
@@ -183,7 +175,6 @@ function jalankanOlahBitmap() {
     gambarTandaTargetKuas();
 }
 
-// Fungsi pembagi error piksel gaib tetangga ruko
 function distribusikanError(data, x, y, width, maxW, maxH, error) {
     if (x < 0 || x >= maxW || y < 0 || y >= maxH) return;
     let idx = (y * width + x) * 4;
@@ -192,11 +183,12 @@ function distribusikanError(data, x, y, width, maxW, maxH, error) {
     data[idx+2] += error;
 }
 
-// --- 5. FUNGSI IMPOR: Kirim Hasil Foto Titik ke Editor Utama (v2.html) ---
+// --- 5. FUNGSI IMPOR: Kirim Hasil Foto Langsung ke Canvas Editor Utama ---
 function kirimKeEditorBapak() {
+    if (!canvasBitmap) return;
     const dataHasilBitmap = canvasBitmap.toDataURL('image/png');
     
-    // Tembak langsung elemen di editor utama tanpa perantara iframe lagi!
+    // Tembak langsung elemen logo geser di editor utama tanpa perantara iframe lagi!
     const logo = document.getElementById('logo-geser');
     if (logo) {
         logo.src = dataHasilBitmap;
@@ -211,9 +203,12 @@ function kirimKeEditorBapak() {
         tutupModalphoto(); // Langsung tutup jendela modal internalnya
         console.log("📸 Foto grafir hasil dither sukses disuntik via modul internal!");
     }
+
+    const btnGbr = document.getElementById('btnGbr');
+    if (btnGbr) btnGbr.style.display = 'block';
 }
 
-// --- 🚀 REPARASI PASTE (CTRL+V) GAIB ANTI-ERROR LOPE-LOPE ---
+// --- 🚀 REPARASI PASTE (CTRL+V) GAIB ANTI-ERROR ---
 window.addEventListener('paste', function(e) {
     const dataClipboard = e.clipboardData || e.originalEvent.clipboardData;
     if (!dataClipboard) return;
@@ -229,29 +224,24 @@ window.addEventListener('paste', function(e) {
     }
 
     if (fileGambar) {
-        console.log("📋 Mak Kluthuk! Ada gambar di-paste, langsung diproses...");
+        console.log("📋 Ada gambar di-paste, langsung diproses...");
         
         const reader = new FileReader();
         reader.onload = function(event) {
-            // --- 🛠️ PERBAIKAN SAKTI: Langsung tembak ID HTML-nya biar anti-null ---
             if (document.getElementById('teks-bantu')) document.getElementById('teks-bantu').style.display = 'none';
             if (document.getElementById('canvas-bitmap')) document.getElementById('canvas-bitmap').style.display = 'none';
             if (document.getElementById('btn-kirim-editor')) document.getElementById('btn-kirim-editor').style.display = 'none';
-            if (document.getElementById('wadah-nama-file')) document.getElementById('wadah-nama-file').style.display = 'none';
-            if (document.getElementById('btn-save-png')) document.getElementById('btn-save-png').style.display = 'none';
             
-            // Cekokin ke img target crop
             const imgTarget = document.getElementById('img-target-crop');
             const btnPotongSekarang = document.getElementById('btn-potong-sekarang');
             
             if (imgTarget && btnPotongSekarang) {
                 imgTarget.src = event.target.result;
                 imgTarget.style.display = 'block';
-                btnPotongSekarang.style.display = 'block'; // Munculkan tombol potong "OK, Pas!"
+                btnPotongSekarang.style.display = 'block';
 
-                // Jalankan mesin CropperJS
                 if (cropperFoto) cropperFoto.destroy();
-                cropperFoto = new cropperFoto(imgTarget, {
+                cropperFoto = new Cropper(imgTarget, {
                     viewMode: 1,
                     aspectRatio: NaN,
                     background: true
@@ -262,35 +252,29 @@ window.addEventListener('paste', function(e) {
     }
 });
     
-    // Fungsi Sakti untuk Mengubah Preset Olah Gambar R&D Lab
+// Fungsi untuk Mengubah Preset Olah Gambar R&D Lab
 function setelPresetGambarRnd(namaPreset, elemenTombol) {
     modePresetGambar = namaPreset;
     
-    // Hilangkan kelas aktif dari semua tombol preset ruko biar rapi
     document.querySelectorAll('.btn-preset-rnd').forEach(btn => {
         btn.style.backgroundColor = "#333";
     });
     
-    // Beri tanda warna berbeda pada tombol yang sedang aktif
     if (elemenTombol) {
-        elemenTombol.style.backgroundColor = "#e67e22"; // Oranye menyala menandakan aktif
+        elemenTombol.style.backgroundColor = "#e67e22"; // Oranye menyala
     }
     
-    // Jalankan kalkulasi ulang piksel secara live!
     if (gambarMatengObor.src) {
         jalankanOlahBitmap();
     }
 }
- 
 
-//PENGHAPUS BACKGROUND PUTIH
-// --- 🧽 JEROAN BARU: SISTEM CORET PENGHAPUS PRESISI & POINTER GAIB ---
+// --- 🧽 SISTEM CORET PENGHAPUS PRESISI & POINTER ---
 let modeHapusAktif = false;
 let sedangMenghapus = false;
 let ukuranKuasHapus = 20;
 let listCoretanPutih = []; 
 
-// Variabel menyimpan posisi terakhir mouse/jari buat gambar Tanda Target
 let posisiX_Sekarang = 0;
 let posisiY_Sekarang = 0;
 let mouseDiAtasCanvas = false;
@@ -310,7 +294,7 @@ function aktifkanModeHapus() {
         btn.style.backgroundColor = "#2196F3";
         mouseDiAtasCanvas = false;
         matikanKuasHapus();
-        jalankanOlahBitmap(); // Bersihkan sisa lingkaran tanda target
+        jalankanOlahBitmap(); 
     }
 }
 
@@ -319,7 +303,7 @@ function ubahUkuranKuas(nilai) {
     const info = document.getElementById('info-kuas');
     if (info) info.innerText = nilai + "px";
     if (modeHapusAktif && gambarMatengObor.src) {
-        jalankanOlahBitmap(); // Update lingkaran tanda target saat slider digeser
+        jalankanOlahBitmap(); 
     }
 }
 
@@ -347,7 +331,6 @@ function matikanKuasHapus() {
     canvasBitmap.removeEventListener('touchmove', prosesCoretHapusHP);
 }
 
-// --- LOGIKA MOUSE PC ---
 function mulaiCoretHapus(e) {
     if (!modeHapusAktif) return;
     sedangMenghapus = true;
@@ -365,12 +348,9 @@ function prosesCoretHapus(e) {
     if (sedangMenghapus) {
         simpanDanCoret(posisiX_Sekarang, posisiY_Sekarang);
     } else {
-        jalankanOlahBitmap(); // Gambar tanda lingkaran targetnya aja pas mouse geser
+        jalankanOlahBitmap(); 
     }
 }
-
-// --- LOGIKA SENTUHAN HP (DENGAN SETELAN PENYEIMBANG PRESISI / OFFSET) ---
-// --- LOGIKA SENTUHAN HP DENGAN RUMUS ANTI-MELAR (SCALING RATIO) ---
 
 function mulaiCoretHapusHP(e) {
     if (!modeHapusAktif) return;
@@ -395,20 +375,16 @@ function prosesCoretHapusHP(e) {
     }
 }
 
-// 🚀 RUMUS UTAMA: Mengonversi Koordinat Layar Fisik HP ke Koordinat Pixel Internal Canvas
 function hitungKoordinatPresisiHP(e) {
+    if (!canvasBitmap) return;
     const rect = canvasBitmap.getBoundingClientRect();
     
-    // 1. Ambil posisi murni sentuhan jari terhadap ujung kotak canvas di layar
     let posisiLayarX = e.touches[0].clientX - rect.left;
     let posisiLayarY = e.touches[0].clientY - rect.top;
     
-    // 2. HITUNG SKALA PERBANDINGAN (Ukuran Asli Pixel / Ukuran Fisik Layar)
     let skalaX = canvasBitmap.width / rect.width;
     let skalaY = canvasBitmap.height / rect.height;
     
-    // 3. Kalikan posisi layar dengan skala biar koordinatnya pas murni di pixel gambar
-    // Ditambah sedikit offset (-15 atau sesuka hati) ke atas biar gak ketutup daging jempol Abang
     posisiX_Sekarang = posisiLayarX * skalaX;
     posisiY_Sekarang = (posisiLayarY * skalaY) - (15 * skalaY); 
 }
@@ -419,7 +395,7 @@ function berhentiCoretHapus() {
 
 function berhentiCoretHapusHP() {
     sedangMenghapus = false;
-    mouseDiAtasCanvas = false; // Hilangkan lingkaran pas jari diangkat dari layar HP
+    mouseDiAtasCanvas = false; 
     jalankanOlahBitmap();
 }
 
@@ -437,18 +413,15 @@ function gambarUlangSemuaCoretan() {
     });
 }
 
-// 🎯 FUNGSI BARU: Menggambar lingkaran tanda target (Pointer) penunjuk lokasi kuas
-function gambarTandaTargetKuas() {	
+function gambarTandaTargetKuas() { 
     if (!modeHapusAktif || !mouseDiAtasCanvas) return;
     
     ctxBitmap.lineWidth = 2;
-    ctxBitmap.strokeStyle = "#ff0000"; // Warna merah menyala biar kelihatan jelas di foto hitam putih!
+    ctxBitmap.strokeStyle = "#ff0000"; // Merah menyala
     ctxBitmap.beginPath();
-    // Gambar lingkaran bayangan sesuai diameter slider kuas
     ctxBitmap.arc(posisiX_Sekarang, posisiY_Sekarang, ukuranKuasHapus / 2, 0, Math.PI * 2);
     ctxBitmap.stroke();
     
-    // Tambah titik pusat kecil di tengah lingkaran biar makin presisi
     ctxBitmap.fillStyle = "#ff0000";
     ctxBitmap.beginPath();
     ctxBitmap.arc(posisiX_Sekarang, posisiY_Sekarang, 2, 0, Math.PI * 2);
@@ -460,14 +433,13 @@ function resetMemoriPenghapus() {
     modeHapusAktif = false;
     mouseDiAtasCanvas = false;
     
-    // 🚀 TAMBAHAN: Sembunyikan panel kembali pas ganti foto
     const panel = document.getElementById('wadah-kontrol-penghapus');
     if (panel) panel.style.display = 'none';
     
     const btnToggle = document.getElementById('btn-toggle-panel-hapus');
     if (btnToggle) {
         btnToggle.style.backgroundColor = "#4CAF50";
-        btnToggle.innerHTML = '<i class="fas fa-eraser"></i>';
+        btnToggle.innerHTML = '🧽 Menu Penghapus Background';
     }
 
     const btn = document.getElementById('btn-mode-hapus');
@@ -478,7 +450,6 @@ function resetMemoriPenghapus() {
     matikanKuasHapus();
 }
     
-// --- 🎛️ FUNGSI TOGGLE POP-UP PANEL PENGHAPUS ---
 function togglePanelPenghapus() {
     const panel = document.getElementById('wadah-kontrol-penghapus');
     const btnToggle = document.getElementById('btn-toggle-panel-hapus');
@@ -486,17 +457,11 @@ function togglePanelPenghapus() {
     if (!panel) return;
     
     if (panel.style.display === 'none' || panel.style.display === '') {
-        // 🔓 MUNCULKAN PANEL (Paket Flex biar rapi, Bang!)
         panel.style.display = 'flex';
-        btnToggle.style.backgroundColor = "#e67e22"; // Ubah warna tombol biar tahu lagi aktif
-        btnToggle.innerHTML = '<i class="fas fa-eraser"></i>';
+        if (btnToggle) btnToggle.style.backgroundColor = "#e67e22"; 
     } else {
-        // 🔒 SEMBUNYIKAN PANEL
         panel.style.display = 'none';
-        btnToggle.style.backgroundColor = "#4CAF50"; // Balik ke warna hijau semula
-        btnToggle.innerHTML = '<i class="fas fa-eraser"></i>';
-        
-        // Pengaman otomatis: Kalau panel ditutup, matikan juga mode kuasnya biar gak bocor ngapus pas gak sengaja kesenggol
+        if (btnToggle) btnToggle.style.backgroundColor = "#4CAF50"; 
         if (modeHapusAktif) {
             aktifkanModeHapus(); 
         }
