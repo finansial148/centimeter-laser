@@ -1,5 +1,5 @@
 
- let cropper;
+ let cropperFoto;
 let gambarMatengObor = new Image(); // Menyimpan data gambar hasil crop asli
 let modePresetGambar = "kayu"; // Nilai bawaan murni: "kayu", "akrilik", atau "siluet"
 
@@ -44,8 +44,8 @@ fileInput.addEventListener('change', function(e) {
         btnPotong.style.display = 'block'; 
 
         // Nyalakan mesin Cropper CropperJS
-        if (cropper) cropper.destroy();
-        cropper = new Cropper(imgTargetCrop, {
+        if (cropperFoto) cropperFoto.destroy();
+        cropperFoto = new cropperFoto(imgTargetCrop, {
             viewMode: 1,
             aspectRatio: NaN, // Bebas sesuka hati ngatur kotak potongnya
             background: true
@@ -56,11 +56,11 @@ fileInput.addEventListener('change', function(e) {
 
 // --- 2. PROSES EKSEKUSI POTONG FOTO ---
 function eksekusiPotongFoto() {
-    if (!cropper) return;
+    if (!cropperFoto) return;
 
     // Ambil gambar hasil crop
     // KODE BARU (Paksa naikkan resolusi gambar hasil crop biar titik dither-nya super mikro!)
-const canvasHasilCrop = cropper.getCroppedCanvas({
+const canvasHasilCrop = cropperFoto.getCroppedCanvas({
     width: 1200, // SAKTI: Paksa lebar gambar jadi 1200 piksel (Atau 1500 biar lebih halus lagi)
     imageSmoothingEnabled: true,
     imageSmoothingQuality: 'high'
@@ -69,8 +69,8 @@ const canvasHasilCrop = cropper.getCroppedCanvas({
     gambarMatengObor.src = canvasHasilCrop.toDataURL();
     gambarMatengObor.onload = function() {
         // Matikan mesin cropper & sembunyikan gambarnya
-        cropper.destroy();
-        cropper = null;
+        cropperFoto.destroy();
+        cropperFoto = null;
         imgTargetCrop.style.display = 'none';
         
         // Sembunyikan tombol potong, munculkan canvas bitmap & tombol kirim
@@ -250,8 +250,8 @@ window.addEventListener('paste', function(e) {
                 btnPotongSekarang.style.display = 'block'; // Munculkan tombol potong "OK, Pas!"
 
                 // Jalankan mesin CropperJS
-                if (cropper) cropper.destroy();
-                cropper = new Cropper(imgTarget, {
+                if (cropperFoto) cropperFoto.destroy();
+                cropperFoto = new cropperFoto(imgTarget, {
                     viewMode: 1,
                     aspectRatio: NaN,
                     background: true
