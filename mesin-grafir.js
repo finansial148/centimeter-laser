@@ -225,7 +225,7 @@ window.addEventListener('paste', function(e) {
 
     if (fileGambar) {
         console.log("📋 Ada gambar di-paste, langsung diproses...");
-        
+        resetMemoriPenghapus();
         const reader = new FileReader();
         reader.onload = function(event) {
             if (document.getElementById('teks-bantu')) document.getElementById('teks-bantu').style.display = 'none';
