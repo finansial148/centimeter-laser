@@ -439,7 +439,7 @@ function resetMemoriPenghapus() {
     const btnToggle = document.getElementById('btn-toggle-panel-hapus');
     if (btnToggle) {
         btnToggle.style.backgroundColor = "#4CAF50";
-        btnToggle.innerHTML = '🧽 Menu Penghapus Background';
+        btnToggle.innerHTML = '🧽 Hapusan';
     }
 
     const btn = document.getElementById('btn-mode-hapus');
@@ -466,4 +466,8 @@ function togglePanelPenghapus() {
             aktifkanModeHapus(); 
         }
     }
+      document.getElementById("media-Grafir").style.display = 'none';
+      document.getElementById("titik-Dot").style.display = 'none';
+      mgrafir.style.color ='black';
+      titikd.style.color ='black';
 }
