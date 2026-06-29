@@ -458,9 +458,11 @@ function togglePanelPenghapus() {
     
     if (panel.style.display === 'none' || panel.style.display === '') {
         panel.style.display = 'flex';
+        tblmeto.style.display = "none";
         if (btnToggle) btnToggle.style.backgroundColor = "#e67e22"; 
     } else {
         panel.style.display = 'none';
+        tblmeto.style.display = "flex";
         if (btnToggle) btnToggle.style.backgroundColor = "#4CAF50"; 
         if (modeHapusAktif) {
             aktifkanModeHapus(); 
