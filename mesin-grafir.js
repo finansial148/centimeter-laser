@@ -61,7 +61,7 @@ function eksekusiPotongFoto() {
 
     // Ambil gambar hasil crop & paksa resolusi tinggi
     const canvasHasilCrop = cropperFoto.getCroppedCanvas({
-        width: 600, // SAKTI: Paksa lebar gambar jadi 1200 piksel biar titik dither super mikro
+        width: 1200, // SAKTI: Paksa lebar gambar jadi 1200 piksel biar titik dither super mikro
         imageSmoothingEnabled: true,
         imageSmoothingQuality: 'high'
     });
