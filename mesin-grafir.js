@@ -88,6 +88,7 @@ function eksekusiPotongFoto() {
         // Jalankan kalkulasi dither titik RDWorks!
         jalankanOlahBitmap();
     };
+  document.getElementById('kotakmen-uGrafir').style.display = "flex";  
 }
 
 // --- 3. PROSES SLIDER GERAK (BRIGHTNESS, CONTRAST, DENSITY) ---
