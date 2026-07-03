@@ -24,9 +24,6 @@ if (fileInput) {
     fileInput.addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (!file) return;
-      
-        // 🚀 RESET MEMORI CORETAN DISINI BIAR BERSIH SEPERTI BARU
-        resetMemoriPenghapus();
 
         const reader = new FileReader();
         reader.onload = function(event) {
@@ -88,7 +85,9 @@ function eksekusiPotongFoto() {
         // Jalankan kalkulasi dither titik RDWorks!
         jalankanOlahBitmap();
     };
-  document.getElementById('kotakmen-uGrafir').style.display = "flex";  
+    if (document.getElementById('kotakmen-uGrafir')) {
+        document.getElementById('kotakmen-uGrafir').style.display = "flex";  
+    }
 }
 
 // --- 3. PROSES SLIDER GERAK (BRIGHTNESS, CONTRAST, DENSITY) ---
@@ -111,7 +110,6 @@ function jalankanOlahBitmap() {
     if (!gambarMatengObor.src || !canvasBitmap) return;
 
     ctxBitmap.drawImage(gambarMatengObor, 0, 0);
-    gambarUlangSemuaCoretan();
 
     const dataPiksel = ctxBitmap.getImageData(0, 0, canvasBitmap.width, canvasBitmap.height);
     const d = dataPiksel.data;
@@ -173,7 +171,6 @@ function jalankanOlahBitmap() {
     }
 
     ctxBitmap.putImageData(dataPiksel, 0, 0);
-    gambarTandaTargetKuas();
 }
 
 function distribusikanError(data, x, y, width, maxW, maxH, error) {
@@ -189,7 +186,6 @@ function kirimKeEditorBapak() {
     if (!canvasBitmap) return;
     const dataHasilBitmap = canvasBitmap.toDataURL('image/png');
     
-    // Tembak langsung elemen logo geser di editor utama tanpa perantara iframe lagi!
     const logo = document.getElementById('logo-geser');
     if (logo) {
         logo.src = dataHasilBitmap;
@@ -200,8 +196,7 @@ function kirimKeEditorBapak() {
         logo.style.filter = 'none';
         
         if (typeof perbaruiDaftarLayers === "function") perbaruiDaftarLayers();
-        
-        tutupModalphoto(); // Langsung tutup jendela modal internalnya
+        if (typeof tutupModalphoto === "function") tutupModalphoto(); // Langsung tutup jendela modal internalnya
         console.log("📸 Foto grafir hasil dither sukses disuntik via modul internal!");
     }
 
@@ -209,7 +204,7 @@ function kirimKeEditorBapak() {
     if (btnGbr) btnGbr.style.display = 'block';
 }
 
-// --- 🚀 REPARASI PASTE (CTRL+V) GAIB ANTI-ERROR ---
+// --- 6. PASTE (CTRL+V) HANDLER AN ANTI-ERROR ---
 window.addEventListener('paste', function(e) {
     const dataClipboard = e.clipboardData || e.originalEvent.clipboardData;
     if (!dataClipboard) return;
@@ -226,7 +221,6 @@ window.addEventListener('paste', function(e) {
 
     if (fileGambar) {
         console.log("📋 Ada gambar di-paste, langsung diproses...");
-        resetMemoriPenghapus();
         const reader = new FileReader();
         reader.onload = function(event) {
             if (document.getElementById('teks-bantu')) document.getElementById('teks-bantu').style.display = 'none';
@@ -253,7 +247,6 @@ window.addEventListener('paste', function(e) {
     }
 });
     
-// Fungsi untuk Mengubah Preset Olah Gambar R&D Lab
 function setelPresetGambarRnd(namaPreset, elemenTombol) {
     modePresetGambar = namaPreset;
     
@@ -268,209 +261,4 @@ function setelPresetGambarRnd(namaPreset, elemenTombol) {
     if (gambarMatengObor.src) {
         jalankanOlahBitmap();
     }
-}
-
-// --- 🧽 SISTEM CORET PENGHAPUS PRESISI & POINTER ---
-let modeHapusAktif = false;
-let sedangMenghapus = false;
-let ukuranKuasHapus = 20;
-let listCoretanPutih = []; 
-
-let posisiX_Sekarang = 0;
-let posisiY_Sekarang = 0;
-let mouseDiAtasCanvas = false;
-
-function aktifkanModeHapus() {
-    const btn = document.getElementById('btn-mode-hapus');
-    if (!btn) return;
-
-    if (!modeHapusAktif) {
-        modeHapusAktif = true;
-        btn.innerText = "🛑 Matikan Penghapus";
-        btn.style.backgroundColor = "#ff4d4d";
-        inisialisasiKuasHapus();
-    } else {
-        modeHapusAktif = false;
-        btn.innerText = "🧽 Aktifkan Penghapus";
-        btn.style.backgroundColor = "#2196F3";
-        mouseDiAtasCanvas = false;
-        matikanKuasHapus();
-        jalankanOlahBitmap(); 
-    }
-}
-
-function ubahUkuranKuas(nilai) {
-    ukuranKuasHapus = parseInt(nilai);
-    const info = document.getElementById('info-kuas');
-    if (info) info.innerText = nilai + "px";
-    if (modeHapusAktif && gambarMatengObor.src) {
-        jalankanOlahBitmap(); 
-    }
-}
-
-function inisialisasiKuasHapus() {
-    if (!canvasBitmap) return;
-    
-    // Mouse PC
-    canvasBitmap.addEventListener('mouseenter', () => { mouseDiAtasCanvas = true; });
-    canvasBitmap.addEventListener('mouseleave', () => { mouseDiAtasCanvas = false; sedangMenghapus = false; jalankanOlahBitmap(); });
-    canvasBitmap.addEventListener('mousedown', mulaiCoretHapus);
-    canvasBitmap.addEventListener('mousemove', prosesCoretHapus);
-    window.addEventListener('mouseup', berhentiCoretHapus);
-    
-    // Sentuhan HP
-    canvasBitmap.addEventListener('touchstart', mulaiCoretHapusHP, { passive: false });
-    canvasBitmap.addEventListener('touchmove', prosesCoretHapusHP, { passive: false });
-    canvasBitmap.addEventListener('touchend', berhentiCoretHapusHP);
-}
-
-function matikanKuasHapus() {
-    if (!canvasBitmap) return;
-    canvasBitmap.removeEventListener('mousedown', mulaiCoretHapus);
-    canvasBitmap.removeEventListener('mousemove', prosesCoretHapus);
-    canvasBitmap.removeEventListener('touchstart', mulaiCoretHapusHP);
-    canvasBitmap.removeEventListener('touchmove', prosesCoretHapusHP);
-}
-
-function mulaiCoretHapus(e) {
-    if (!modeHapusAktif) return;
-    sedangMenghapus = true;
-    posisiX_Sekarang = e.offsetX;
-    posisiY_Sekarang = e.offsetY;
-    simpanDanCoret(posisiX_Sekarang, posisiY_Sekarang);
-}
-
-function prosesCoretHapus(e) {
-    if (!modeHapusAktif) return;
-    posisiX_Sekarang = e.offsetX;
-    posisiY_Sekarang = e.offsetY;
-    mouseDiAtasCanvas = true;
-    
-    if (sedangMenghapus) {
-        simpanDanCoret(posisiX_Sekarang, posisiY_Sekarang);
-    } else {
-        jalankanOlahBitmap(); 
-    }
-}
-
-function mulaiCoretHapusHP(e) {
-    if (!modeHapusAktif) return;
-    e.preventDefault();
-    sedangMenghapus = true;
-    mouseDiAtasCanvas = true;
-    
-    hitungKoordinatPresisiHP(e);
-    simpanDanCoret(posisiX_Sekarang, posisiY_Sekarang);
-}
-
-function prosesCoretHapusHP(e) {
-    if (!modeHapusAktif) return;
-    e.preventDefault();
-    
-    hitungKoordinatPresisiHP(e);
-    
-    if (sedangMenghapus) {
-        simpanDanCoret(posisiX_Sekarang, posisiY_Sekarang);
-    } else {
-        jalankanOlahBitmap();
-    }
-}
-
-function hitungKoordinatPresisiHP(e) {
-    if (!canvasBitmap) return;
-    const rect = canvasBitmap.getBoundingClientRect();
-    
-    let posisiLayarX = e.touches[0].clientX - rect.left;
-    let posisiLayarY = e.touches[0].clientY - rect.top;
-    
-    let skalaX = canvasBitmap.width / rect.width;
-    let skalaY = canvasBitmap.height / rect.height;
-    
-    posisiX_Sekarang = posisiLayarX * skalaX;
-    posisiY_Sekarang = (posisiLayarY * skalaY) - (15 * skalaY); 
-}
-
-function berhentiCoretHapus() {
-    sedangMenghapus = false;
-}
-
-function berhentiCoretHapusHP() {
-    sedangMenghapus = false;
-    mouseDiAtasCanvas = false; 
-    jalankanOlahBitmap();
-}
-
-function simpanDanCoret(x, y) {
-    listCoretanPutih.push({ x: x, y: y, r: ukuranKuasHapus / 2 });
-    jalankanOlahBitmap(); 
-}
-
-function gambarUlangSemuaCoretan() {
-    listCoretanPutih.forEach(pt => {
-        ctxBitmap.fillStyle = "#ffffff";
-        ctxBitmap.beginPath();
-        ctxBitmap.arc(pt.x, pt.y, pt.r, 0, Math.PI * 2);
-        ctxBitmap.fill();
-    });
-}
-
-function gambarTandaTargetKuas() { 
-    if (!modeHapusAktif || !mouseDiAtasCanvas) return;
-    
-    ctxBitmap.lineWidth = 2;
-    ctxBitmap.strokeStyle = "#ff0000"; // Merah menyala
-    ctxBitmap.beginPath();
-    ctxBitmap.arc(posisiX_Sekarang, posisiY_Sekarang, ukuranKuasHapus / 2, 0, Math.PI * 2);
-    ctxBitmap.stroke();
-    
-    ctxBitmap.fillStyle = "#ff0000";
-    ctxBitmap.beginPath();
-    ctxBitmap.arc(posisiX_Sekarang, posisiY_Sekarang, 2, 0, Math.PI * 2);
-    ctxBitmap.fill();
-}
-
-function resetMemoriPenghapus() {
-    listCoretanPutih = [];
-    modeHapusAktif = false;
-    mouseDiAtasCanvas = false;
-    
-    const panel = document.getElementById('wadah-kontrol-penghapus');
-    if (panel) panel.style.display = 'none';
-    
-    const btnToggle = document.getElementById('btn-toggle-panel-hapus');
-    if (btnToggle) {
-        btnToggle.style.backgroundColor = "#4CAF50";
-        btnToggle.innerHTML = '🧽 Hapusan';
-    }
-
-    const btn = document.getElementById('btn-mode-hapus');
-    if (btn) {
-        btn.innerText = "🧽 Jalankan Kuas";
-        btn.style.backgroundColor = "#2196F3";
-    }
-    matikanKuasHapus();
-}
-    
-function togglePanelPenghapus() {
-    const panel = document.getElementById('wadah-kontrol-penghapus');
-    const btnToggle = document.getElementById('btn-toggle-panel-hapus');
-    
-    if (!panel) return;
-    
-    if (panel.style.display === 'none' || panel.style.display === '') {
-        panel.style.display = 'flex';
-        tblmeto.style.display = "none";
-        if (btnToggle) btnToggle.style.backgroundColor = "#e67e22"; 
-    } else {
-        panel.style.display = 'none';
-        tblmeto.style.display = "flex";
-        if (btnToggle) btnToggle.style.backgroundColor = "#4CAF50"; 
-        if (modeHapusAktif) {
-            aktifkanModeHapus(); 
-        }
-    }
-      document.getElementById("media-Grafir").style.display = 'none';
-      document.getElementById("titik-Dot").style.display = 'none';
-      mgrafir.style.color ='black';
-      titikd.style.color ='black';
 }
